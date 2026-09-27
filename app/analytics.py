@@ -1,36 +1,43 @@
-import pandas as pd
+from __future__ import annotations
+
+from collections import defaultdict
+
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from .models import Sale
+
 
 def get_sales_summary(db: Session):
     sales = db.query(Sale).all()
 
     if not sales:
-        return {"message": "No data"}
+        return {
+            "total_revenue": 0.0,
+            "average_ticket": 0.0,
+            "top_product": None,
+            "sales_per_day": {},
+        }
 
-    data = [{
-        "product": s.product,
-        "value": s.value,
-        "date": s.date
-    } for s in sales]
+    total_revenue = sum(float(sale.value) for sale in sales)
+    average_ticket = total_revenue / len(sales)
 
-    df = pd.DataFrame(data)
+    product_totals: dict[str, float] = defaultdict(float)
+    sales_per_day: dict[str, float] = defaultdict(float)
 
-    total_revenue = df["value"].sum()
-    avg_ticket = round(df["value"].mean(), 2)
+    for sale in sales:
+        product_totals[sale.product] += float(sale.value)
+        sales_per_day[sale.date.isoformat()] += float(sale.value)
 
     top_product = (
-        df.groupby("product")["value"]
-        .sum()
-        .sort_values(ascending=False)
-        .idxmax()
+        max(product_totals.items(), key=lambda item: item[1])[0]
+        if product_totals
+        else None
     )
 
-    sales_per_day = df.groupby("date")["value"].sum().to_dict()
-
     return {
-        "total_revenue": round(float(total_revenue), 2),
-        "average_ticket": round(float(avg_ticket), 2),
+        "total_revenue": round(total_revenue, 2),
+        "average_ticket": round(average_ticket, 2),
         "top_product": top_product,
-        "sales_per_day": sales_per_day
+        "sales_per_day": {day: round(value, 2) for day, value in sorted(sales_per_day.items())},
     }
