@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -38,11 +40,19 @@ def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
 def list_sales(
     db: Session = Depends(get_db),
     product: str | None = Query(default=None, description="Filter by product name"),
+    start_date: date | None = Query(default=None, description="Start date for filtering"),
+    end_date: date | None = Query(default=None, description="End date for filtering"),
+    skip: int = Query(default=0, ge=0, description="Number of rows to skip"),
+    limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of rows to return"),
 ):
-    sales = crud.get_sales(db)
-    if product is not None:
-        sales = [sale for sale in sales if sale.product.lower() == product.lower()]
-    return sales
+    return crud.get_sales(
+        db,
+        product=product,
+        start_date=start_date,
+        end_date=end_date,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @app.get("/analytics", response_model=schemas.AnalyticsResponse)
