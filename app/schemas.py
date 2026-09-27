@@ -20,5 +20,7 @@ class SaleResponse(SaleCreate):
 class AnalyticsResponse(BaseModel):
     total_revenue: float
     average_ticket: float
+    total_sales: int
     top_product: str | None
     sales_per_day: dict[str, float]
+    revenue_by_product: dict[str, float]

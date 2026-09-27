@@ -30,3 +30,26 @@ def get_sales(db: Session, *, product: str | None = None, start_date: date | Non
 
 def get_sale_by_id(db: Session, sale_id: int):
     return db.query(models.Sale).filter(models.Sale.id == sale_id).first()
+
+
+def update_sale(db: Session, sale_id: int, sale_update: schemas.SaleCreate):
+    db_sale = get_sale_by_id(db, sale_id)
+    if db_sale is None:
+        return None
+
+    for key, value in sale_update.model_dump().items():
+        setattr(db_sale, key, value)
+
+    db.commit()
+    db.refresh(db_sale)
+    return db_sale
+
+
+def delete_sale(db: Session, sale_id: int):
+    db_sale = get_sale_by_id(db, sale_id)
+    if db_sale is None:
+        return False
+
+    db.delete(db_sale)
+    db.commit()
+    return True

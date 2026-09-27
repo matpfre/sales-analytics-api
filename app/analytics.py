@@ -14,8 +14,10 @@ def get_sales_summary(db: Session):
         return {
             "total_revenue": 0.0,
             "average_ticket": 0.0,
+            "total_sales": 0,
             "top_product": None,
             "sales_per_day": {},
+            "revenue_by_product": {},
         }
 
     total_revenue = sum(float(sale.value) for sale in sales)
@@ -37,6 +39,8 @@ def get_sales_summary(db: Session):
     return {
         "total_revenue": round(total_revenue, 2),
         "average_ticket": round(average_ticket, 2),
+        "total_sales": len(sales),
         "top_product": top_product,
         "sales_per_day": {day: round(value, 2) for day, value in sorted(sales_per_day.items())},
+        "revenue_by_product": {product: round(value, 2) for product, value in sorted(product_totals.items())},
     }

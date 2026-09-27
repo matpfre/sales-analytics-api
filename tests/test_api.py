@@ -28,8 +28,10 @@ def test_should_return_empty_analytics_when_no_sales_exist():
     assert response.json() == {
         "total_revenue": 0.0,
         "average_ticket": 0.0,
+        "total_sales": 0,
         "top_product": None,
         "sales_per_day": {},
+        "revenue_by_product": {},
     }
 
 
@@ -53,9 +55,48 @@ def test_should_calculate_analytics_for_sales():
     payload = response.json()
     assert payload["total_revenue"] == 450.0
     assert payload["average_ticket"] == 150.0
+    assert payload["total_sales"] == 3
     assert payload["top_product"] == "Keyboard"
     assert payload["sales_per_day"]["2026-09-27"] == 250.0
     assert payload["sales_per_day"]["2026-09-28"] == 200.0
+    assert payload["revenue_by_product"]["Keyboard"] == 250.0
+    assert payload["revenue_by_product"]["Monitor"] == 200.0
+
+
+def test_should_update_existing_sale():
+    response = client.post(
+        "/sales",
+        json={"product": "Laptop", "value": 1000, "date": "2026-09-27"},
+    )
+    sale_id = response.json()["id"]
+
+    update_response = client.put(
+        f"/sales/{sale_id}",
+        json={"product": "Laptop Pro", "value": 1500, "date": "2026-09-28"},
+    )
+
+    assert update_response.status_code == 200
+    payload = update_response.json()
+    assert payload["product"] == "Laptop Pro"
+    assert payload["value"] == 1500.0
+    assert payload["date"] == "2026-09-28"
+
+
+def test_should_delete_existing_sale():
+    response = client.post(
+        "/sales",
+        json={"product": "Monitor", "value": 200, "date": "2026-09-27"},
+    )
+    sale_id = response.json()["id"]
+
+    delete_response = client.delete(f"/sales/{sale_id}")
+
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {"message": "Sale deleted successfully"}
+
+    get_response = client.get("/sales")
+    assert get_response.status_code == 200
+    assert get_response.json() == []
 
 
 def test_should_filter_sales_by_date_range_and_apply_pagination():
