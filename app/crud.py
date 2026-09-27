@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -13,3 +15,7 @@ def create_sale(db: Session, sale: schemas.SaleCreate):
 
 def get_sales(db: Session):
     return db.query(models.Sale).order_by(models.Sale.date.desc(), models.Sale.id.desc()).all()
+
+
+def get_sale_by_id(db: Session, sale_id: int):
+    return db.query(models.Sale).filter(models.Sale.id == sale_id).first()

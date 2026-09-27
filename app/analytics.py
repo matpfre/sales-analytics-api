@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .models import Sale

@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from . import analytics, crud, schemas
@@ -26,7 +26,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.post("/sales", response_model=schemas.SaleResponse, status_code=201)
+@app.post("/sales", response_model=schemas.SaleResponse, status_code=status.HTTP_201_CREATED)
 def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
     try:
         return crud.create_sale(db, sale)
@@ -35,8 +35,14 @@ def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/sales", response_model=list[schemas.SaleResponse])
-def list_sales(db: Session = Depends(get_db)):
-    return crud.get_sales(db)
+def list_sales(
+    db: Session = Depends(get_db),
+    product: str | None = Query(default=None, description="Filter by product name"),
+):
+    sales = crud.get_sales(db)
+    if product is not None:
+        sales = [sale for sale in sales if sale.product.lower() == product.lower()]
+    return sales
 
 
 @app.get("/analytics", response_model=schemas.AnalyticsResponse)
